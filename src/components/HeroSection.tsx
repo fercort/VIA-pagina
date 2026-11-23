@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, Play, Pause, Film, ScanLine, FileSpreadsheet } from 'lucide-react';
 import { DEMO_VIDEO_SRC } from '../constants';
 
@@ -7,12 +7,20 @@ export function HeroSection() {
   const [videoError, setVideoError] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
 
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = true;
+    video.play().catch(() => {
+      setIsPlaying(false);
+    });
+  }, []);
+
   const togglePlayback = () => {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      video.play().catch(() => undefined);
-      setIsPlaying(true);
+      video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     } else {
       video.pause();
       setIsPlaying(false);
@@ -82,6 +90,9 @@ export function HeroSection() {
                       muted
                       loop
                       playsInline
+                      preload="auto"
+                      onPlay={() => setIsPlaying(true)}
+                      onPause={() => setIsPlaying(false)}
                       onError={() => setVideoError(true)}
                       className="w-full h-full object-cover"
                     />

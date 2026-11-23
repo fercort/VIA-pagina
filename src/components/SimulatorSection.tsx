@@ -72,16 +72,25 @@ function pickWeightedCategory(): VehicleCategoryKey {
   return 'cargaPesada';
 }
 
-function getVehicleDimensions(category: VehicleCategoryKey): { width: number; height: number; baseSpeed: number } {
+function getLaneCenterY(laneIndex: number, canvasHeight: number): number {
+  const ratios = [0.24, 0.4, 0.61, 0.77];
+  return canvasHeight * (ratios[laneIndex] ?? 0.5);
+}
+
+function getVehicleDimensions(
+  category: VehicleCategoryKey,
+  canvasWidth: number
+): { width: number; height: number; baseSpeed: number } {
+  const scale = Math.max(0.68, Math.min(1, canvasWidth / 640));
   switch (category) {
     case 'motos':
-      return { width: 26, height: 11, baseSpeed: 2.35 };
+      return { width: Math.round(26 * scale), height: Math.round(11 * scale), baseSpeed: 2.35 * scale };
     case 'livianos':
-      return { width: 46, height: 20, baseSpeed: 1.95 };
+      return { width: Math.round(46 * scale), height: Math.round(19 * scale), baseSpeed: 1.95 * scale };
     case 'buses':
-      return { width: 78, height: 24, baseSpeed: 1.38 };
+      return { width: Math.round(76 * scale), height: Math.round(23 * scale), baseSpeed: 1.42 * scale };
     case 'cargaPesada':
-      return { width: 88, height: 25, baseSpeed: 1.22 };
+      return { width: Math.round(86 * scale), height: Math.round(24 * scale), baseSpeed: 1.26 * scale };
   }
 }
 
@@ -136,79 +145,95 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
   const excelGrandTotal =
     excelTotals.livianos + excelTotals.motos + excelTotals.buses + excelTotals.cargaPesada;
 
-  const spawnVehicle = useCallback((forcedCategory?: VehicleCategoryKey, canvasWidth = 720, canvasHeight = 360) => {
-    const category = forcedCategory ?? pickWeightedCategory();
-    const { width, height, baseSpeed } = getVehicleDimensions(category);
+  const spawnVehicle = useCallback(
+    (forcedCategory?: VehicleCategoryKey, canvasWidth = 720, canvasHeight = 360, immediate = false) => {
+      const category = forcedCategory ?? pickWeightedCategory();
+      const { width, height, baseSpeed } = getVehicleDimensions(category, canvasWidth);
 
-    // 4 horizontal lanes: 0,1 move Left (Norte-Sur); 2,3 move Right (Sur-Norte)
-    const candidateLanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
-    const laneTopY = [
-      canvasHeight * 0.2,
-      canvasHeight * 0.37,
-      canvasHeight * 0.63,
-      canvasHeight * 0.8,
-    ];
+      // 4 horizontal lanes: 0,1 move Left (Norte-Sur); 2,3 move Right (Sur-Norte)
+      const candidateLanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
 
-    let chosenLane = -1;
-    for (const laneIndex of candidateLanes) {
-      const movesRight = laneIndex >= 2;
-      const startX = movesRight ? -width - 16 : canvasWidth + 16;
+      let chosenLane = -1;
+      let bestLaneFallback = candidateLanes[0];
+      let bestMinDistance = -1;
 
-      // Ensure generous spacing from any existing vehicle in the same lane
-      const hasCollision = vehiclesRef.current.some((v) => {
-        if (v.laneIndex !== laneIndex) return false;
-        return Math.abs(v.x - startX) < Math.max(v.width, width) + 52;
-      });
+      for (const laneIndex of candidateLanes) {
+        const movesRight = laneIndex >= 2;
+        const startX = immediate
+          ? movesRight
+            ? 14
+            : canvasWidth - width - 14
+          : movesRight
+            ? -width - 14
+            : canvasWidth + 14;
 
-      if (!hasCollision) {
-        chosenLane = laneIndex;
-        break;
+        let minDistance = Infinity;
+        for (const v of vehiclesRef.current) {
+          if (v.laneIndex !== laneIndex) continue;
+          const dist = Math.abs(v.x - startX);
+          if (dist < minDistance) minDistance = dist;
+        }
+
+        if (minDistance > bestMinDistance) {
+          bestMinDistance = minDistance;
+          bestLaneFallback = laneIndex;
+        }
+
+        if (minDistance >= width + 48) {
+          chosenLane = laneIndex;
+          break;
+        }
       }
-    }
 
-    if (chosenLane === -1) return;
+      if (chosenLane === -1) {
+        if (!forcedCategory) return;
+        chosenLane = bestLaneFallback;
+      }
 
-    const movesRight = chosenLane >= 2;
-    const uid = nextUidRef.current++;
-    const speedVariation = 0.88 + Math.random() * 0.26;
+      const movesRight = chosenLane >= 2;
+      const uid = nextUidRef.current++;
+      const speedVariation = 0.9 + Math.random() * 0.22;
+      const startX = immediate
+        ? movesRight
+          ? 14
+          : canvasWidth - width - 14
+        : movesRight
+          ? -width - 12
+          : canvasWidth + 12;
 
-    vehiclesRef.current.push({
-      uid,
-      trackId: `#VIA-${uid}`,
-      category,
-      laneIndex: chosenLane,
-      x: movesRight ? -width - 12 : canvasWidth + 12,
-      y: laneTopY[chosenLane] - height / 2,
-      width,
-      height,
-      speed: (movesRight ? 1 : -1) * baseSpeed * speedVariation,
-      direction: movesRight ? 'Sur–Norte' : 'Norte–Sur',
-      counted: false,
-      flashAlpha: 0,
-      frameNumber: frameCounterRef.current,
-    });
-  }, []);
+      vehiclesRef.current.push({
+        uid,
+        trackId: `#VIA-${uid}`,
+        category,
+        laneIndex: chosenLane,
+        x: startX,
+        y: getLaneCenterY(chosenLane, canvasHeight) - height / 2,
+        width,
+        height,
+        speed: (movesRight ? 1 : -1) * baseSpeed * speedVariation,
+        direction: movesRight ? 'Sur–Norte' : 'Norte–Sur',
+        counted: false,
+        flashAlpha: immediate ? 0.8 : 0,
+        frameNumber: frameCounterRef.current,
+      });
+    },
+    []
+  );
 
   // Seed initial traffic so canvas is immediately alive on first paint
   const seedInitialTraffic = useCallback((canvasWidth: number, canvasHeight: number) => {
     vehiclesRef.current = [];
     flashesRef.current = [];
-    const laneTopY = [
-      canvasHeight * 0.2,
-      canvasHeight * 0.37,
-      canvasHeight * 0.63,
-      canvasHeight * 0.8,
-    ];
     const presets: Array<{ category: VehicleCategoryKey; laneIndex: number; xRatio: number }> = [
       { category: 'livianos', laneIndex: 0, xRatio: 0.72 },
       { category: 'motos', laneIndex: 1, xRatio: 0.62 },
-      { category: 'cargaPesada', laneIndex: 2, xRatio: 0.24 },
-      { category: 'buses', laneIndex: 3, xRatio: 0.38 },
-      { category: 'livianos', laneIndex: 2, xRatio: 0.08 },
+      { category: 'cargaPesada', laneIndex: 2, xRatio: 0.22 },
+      { category: 'buses', laneIndex: 3, xRatio: 0.36 },
+      { category: 'livianos', laneIndex: 2, xRatio: 0.04 },
     ];
 
     for (const p of presets) {
-      const { width, height, baseSpeed } = getVehicleDimensions(p.category);
+      const { width, height, baseSpeed } = getVehicleDimensions(p.category, canvasWidth);
       const movesRight = p.laneIndex >= 2;
       const uid = nextUidRef.current++;
       vehiclesRef.current.push({
@@ -217,7 +242,7 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
         category: p.category,
         laneIndex: p.laneIndex,
         x: canvasWidth * p.xRatio,
-        y: laneTopY[p.laneIndex] - height / 2,
+        y: getLaneCenterY(p.laneIndex, canvasHeight) - height / 2,
         width,
         height,
         speed: (movesRight ? 1 : -1) * baseSpeed,
@@ -246,12 +271,24 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
     const resizeCanvas = () => {
       const rect = canvas.getBoundingClientRect();
       if (rect.width === 0 || rect.height === 0) return;
+      const prevWidth = logicalWidth;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       logicalWidth = rect.width;
       logicalHeight = rect.height;
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Re-align active vehicles cleanly on viewport resize
+      const widthRatio = prevWidth > 0 ? logicalWidth / prevWidth : 1;
+      for (const v of vehiclesRef.current) {
+        const dims = getVehicleDimensions(v.category, logicalWidth);
+        v.x = v.x * widthRatio;
+        v.width = dims.width;
+        v.height = dims.height;
+        v.y = getLaneCenterY(v.laneIndex, logicalHeight) - v.height / 2;
+        v.speed = (v.speed >= 0 ? 1 : -1) * dims.baseSpeed;
+      }
     };
 
     resizeCanvas();
@@ -265,32 +302,36 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
     let lastTime = performance.now();
 
     const drawRoad = (w: number, h: number, lineX: number) => {
+      const roadTop = h * 0.13;
+      const roadBottom = h * 0.88;
+      const centerY = (roadTop + roadBottom) / 2;
+
       // Asphalt background
       ctx.fillStyle = '#091322';
       ctx.fillRect(0, 0, w, h);
 
-      // Road shoulder strips
+      // Road surface
       ctx.fillStyle = '#0d1b30';
-      ctx.fillRect(0, h * 0.08, w, h * 0.84);
+      ctx.fillRect(0, roadTop, w, roadBottom - roadTop);
 
       // Outer road edge lines
-      ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+      ctx.strokeStyle = 'rgba(148, 163, 184, 0.28)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.08);
-      ctx.lineTo(w, h * 0.08);
-      ctx.moveTo(0, h * 0.92);
-      ctx.lineTo(w, h * 0.92);
+      ctx.moveTo(0, roadTop);
+      ctx.lineTo(w, roadTop);
+      ctx.moveTo(0, roadBottom);
+      ctx.lineTo(w, roadBottom);
       ctx.stroke();
 
       // Double center median divider
       ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.49);
-      ctx.lineTo(w, h * 0.49);
-      ctx.moveTo(0, h * 0.51);
-      ctx.lineTo(w, h * 0.51);
+      ctx.moveTo(0, centerY - 2.5);
+      ctx.lineTo(w, centerY - 2.5);
+      ctx.moveTo(0, centerY + 2.5);
+      ctx.lineTo(w, centerY + 2.5);
       ctx.stroke();
 
       // Dashed lane dividers
@@ -299,18 +340,18 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
       ctx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(0, h * 0.285);
-      ctx.lineTo(w, h * 0.285);
-      ctx.moveTo(0, h * 0.715);
-      ctx.lineTo(w, h * 0.715);
+      ctx.moveTo(0, h * 0.32);
+      ctx.lineTo(w, h * 0.32);
+      ctx.moveTo(0, h * 0.69);
+      ctx.lineTo(w, h * 0.69);
       ctx.stroke();
       ctx.restore();
 
-      // Direction annotations
-      ctx.font = '500 10px "JetBrains Mono", monospace';
-      ctx.fillStyle = 'rgba(148, 163, 184, 0.55)';
-      ctx.fillText('← SENTIDO NORTE–SUR', 12, h * 0.055);
-      ctx.fillText('SENTIDO SUR–NORTE →', 12, h * 0.97);
+      // Direction annotations in dedicated safe margins
+      ctx.font = w < 440 ? '500 9px "JetBrains Mono", monospace' : '500 10px "JetBrains Mono", monospace';
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.65)';
+      ctx.fillText('← NORTE–SUR', 10, roadTop - 8);
+      ctx.fillText('SUR–NORTE →', 10, roadBottom + 14);
 
       // Virtual Counting Line
       ctx.save();
@@ -318,22 +359,23 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
-      ctx.moveTo(lineX, h * 0.07);
-      ctx.lineTo(lineX, h * 0.93);
+      ctx.moveTo(lineX, roadTop - 4);
+      ctx.lineTo(lineX, roadBottom + 4);
       ctx.stroke();
       ctx.restore();
 
       // Counting line label
-      ctx.fillStyle = 'rgba(0, 180, 147, 0.18)';
-      ctx.fillRect(lineX - 58, h * 0.015, 116, 17);
+      const labelW = w < 440 ? 96 : 116;
+      ctx.fillStyle = 'rgba(0, 180, 147, 0.2)';
+      ctx.fillRect(lineX - labelW / 2, 4, labelW, 16);
       ctx.fillStyle = '#00d2aa';
-      ctx.font = '600 9.5px "JetBrains Mono", monospace';
+      ctx.font = w < 440 ? '600 8.5px "JetBrains Mono", monospace' : '600 9.5px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('LÍNEA VIRTUAL VIA', lineX, h * 0.015 + 11.5);
+      ctx.fillText('LÍNEA VIRTUAL VIA', lineX, 15);
       ctx.textAlign = 'left';
     };
 
-    const drawVehicle = (v: SimVehicle) => {
+    const drawVehicle = (v: SimVehicle, w: number) => {
       const meta = VEHICLE_CATEGORIES[v.category];
       const cx = v.x;
       const cy = v.y;
@@ -345,7 +387,7 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
 
       if (v.category === 'cargaPesada') {
         const isRight = v.speed > 0;
-        const cabW = 20;
+        const cabW = Math.round(v.width * 0.23);
         const trailerW = v.width - cabW - 3;
         if (isRight) {
           ctx.fillRect(cx, cy, trailerW, v.height);
@@ -375,24 +417,24 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
       }
 
       // Detection Bounding Box
-      const pad = 4;
+      const pad = 3.5;
       ctx.save();
       ctx.strokeStyle = v.counted ? '#00d2aa' : meta.strokeColor;
       ctx.lineWidth = v.flashAlpha > 0.05 ? 2 : 1.1;
       ctx.strokeRect(cx - pad, cy - pad, v.width + pad * 2, v.height + pad * 2);
 
       // Compact tracking tag above box
-      const labelText = `${v.trackId} ${meta.shortLabel}`;
-      ctx.font = '600 9px "JetBrains Mono", monospace';
-      const textWidth = ctx.measureText(labelText).width;
+      const compactTag = w < 440 ? meta.shortLabel : `${v.trackId} ${meta.shortLabel}`;
+      ctx.font = w < 440 ? '600 8px "JetBrains Mono", monospace' : '600 9px "JetBrains Mono", monospace';
+      const textWidth = ctx.measureText(compactTag).width;
       const tagX = cx - pad;
-      const tagY = cy - pad - 14;
+      const tagY = cy - pad - 13;
 
       ctx.fillStyle = v.counted ? 'rgba(0, 180, 147, 0.92)' : 'rgba(11, 25, 44, 0.9)';
-      ctx.fillRect(tagX, tagY, textWidth + 8, 13);
+      ctx.fillRect(tagX, tagY, textWidth + 7, 12);
 
       ctx.fillStyle = v.counted ? '#0b192c' : meta.strokeColor;
-      ctx.fillText(labelText, tagX + 4, tagY + 9.5);
+      ctx.fillText(compactTag, tagX + 3.5, tagY + 9);
       ctx.restore();
     };
 
@@ -407,10 +449,10 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
         spawnAccumulatorRef.current += dt;
 
         // Spawn steady natural Colombian arterial flow
-        if (spawnAccumulatorRef.current >= 42) {
+        if (spawnAccumulatorRef.current >= 40) {
           spawnAccumulatorRef.current = 0;
           if (vehiclesRef.current.length < 13) {
-            spawnVehicle(undefined, logicalWidth, logicalHeight);
+            spawnVehicle(undefined, logicalWidth, logicalHeight, false);
           }
         }
 
@@ -419,6 +461,7 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
         for (const v of vehiclesRef.current) {
           const prevCenterX = v.x + v.width / 2;
           v.x += v.speed * dt;
+          v.y = getLaneCenterY(v.laneIndex, logicalHeight) - v.height / 2;
           const nextCenterX = v.x + v.width / 2;
 
           if (!v.counted) {
@@ -489,7 +532,7 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
       }
 
       for (const v of vehiclesRef.current) {
-        drawVehicle(v);
+        drawVehicle(v, logicalWidth);
       }
 
       animId = window.requestAnimationFrame(tick);
@@ -510,12 +553,12 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
     const clickX = event.clientX - rect.left;
     const clickY = event.clientY - rect.top;
 
-    const hit = vehiclesRef.current.find(
+    const hit = [...vehiclesRef.current].reverse().find(
       (v) =>
-        clickX >= v.x - 10 &&
-        clickX <= v.x + v.width + 10 &&
-        clickY >= v.y - 16 &&
-        clickY <= v.y + v.height + 10
+        clickX >= v.x - 14 &&
+        clickX <= v.x + v.width + 14 &&
+        clickY >= v.y - 20 &&
+        clickY <= v.y + v.height + 14
     );
 
     if (hit) {
@@ -544,7 +587,10 @@ export function SimulatorSection({ onAuditRecord, onSelectQuote }: SimulatorSect
   const handleInjectHeavyTruck = () => {
     const canvas = canvasRef.current;
     const rect = canvas?.getBoundingClientRect();
-    spawnVehicle('cargaPesada', rect?.width || 720, rect?.height || 360);
+    if (!isRunningRef.current) {
+      setIsRunning(true);
+    }
+    spawnVehicle('cargaPesada', rect?.width || 720, rect?.height || 360, true);
   };
 
   const handleDownloadCsv = () => {

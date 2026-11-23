@@ -32,7 +32,23 @@ export function ContactSection({ activeQuote }: ContactSectionProps) {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2400);
     } catch {
-      setCopied(false);
+      try {
+        const textarea = document.createElement('textarea');
+        textarea.value = suggestedMessage;
+        textarea.setAttribute('readonly', '');
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (ok) {
+          setCopied(true);
+          window.setTimeout(() => setCopied(false), 2400);
+        }
+      } catch {
+        setCopied(false);
+      }
     }
   };
 
