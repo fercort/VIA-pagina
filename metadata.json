@@ -1,0 +1,8 @@
+{
+  "name": "VIA — Aforo Vehicular con IA en Colombia",
+  "description": "Si se mueve, lo contamos. Plataforma de visión artificial para aforo vehicular en Colombia con entrega en Excel cada 15 minutos en horas, no en días.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VISTRA | De un píxel a una decisión — Inteligencia Artificial para Aforo y Conteo de Ejes</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#0b192c',
+              dark: '#07101d',
+              teal: '#00b493',
+              tealHover: '#009b7e',
+              accent: '#00d2aa',
+              slate: '#64748b',
+              surface: '#f8fafc',
+              card: '#ffffff'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            body: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #fafbfc;
+      color: #0f172a;
+      overflow-x: hidden;
+    }
+    
+    .font-display {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      letter-spacing: -0.03em;
+    }
+    
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Subtle grid overlay */
+    .bg-tech-grid {
+      background-size: 40px 40px;
+      background-image: 
+        linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+    }
+
+    .bg-tech-dots {
+      background-size: 24px 24px;
+      background-image: radial-gradient(rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+    }
+
+    .dark-tech-grid {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Glow effects */
+    .glow-teal {
+      box-shadow: 0 0 25px -5px rgba(0, 180, 147, 0.35);
+    }
+    
+    .glow-card {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glow-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px -10px rgba(11, 25, 44, 0.08);
+    }
+
+    /* Pulse radar */
+    @keyframes ping-slow {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .animate-ping-slow {
+      animation: ping-slow 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+  </style>
+</head>
+<body class="selection:bg-brand-teal selection:text-white">
+
+  <!-- TOP STATUS BAR (Inspired by modern deep-tech minimal headers) -->
+  <header class="border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-50 transition-all">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Tagline -->
+        <a href="#hero" class="flex items-center gap-3 group">
+          <img src="logo-vistra.png" alt="VISTRA Logo" class="h-9 w-auto object-contain transition-transform group-hover:scale-105" />
+          <div class="hidden sm:block border-l border-slate-200 pl-3">
+            <span class="text-[10px] font-mono-tech tracking-wider uppercase text-slate-500 block">Motor de Visión Vial</span>
+            <span class="text-xs font-semibold text-brand-navy">VISTRA • Powered by VIZIA Core</span>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden md:flex items-center gap-8 text-xs font-mono-tech uppercase tracking-wider text-slate-600">
+          <a href="#arquitectura" class="hover:text-brand-teal transition-colors">01 // Sistema</a>
+          <a href="#ejes" class="hover:text-brand-teal transition-colors">02 // Motor de Ejes</a>
+          <a href="#soluciones" class="hover:text-brand-teal transition-colors">03 // Sectores</a>
+          <a href="#simulador" class="hover:text-brand-teal transition-colors flex items-center gap-1.5 text-brand-teal font-semibold">
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-teal animate-pulse"></span>
+            04 // Demo Lab
+          </a>
+          <a href="#investigacion" class="hover:text-brand-teal transition-colors">05 // I+D Tesis</a>
+          <a href="#cotizador" class="hover:text-brand-teal transition-colors">06 // Cotizar</a>
+        </nav>
+
+        <!-- Right Action Button -->
+        <div class="flex items-center gap-3">
+          <a href="#simulador" class="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded border border-slate-300 text-xs font-mono-tech uppercase text-slate-700 hover:border-brand-teal hover:text-brand-teal transition-colors">
+            <i data-lucide="play-circle" class="w-3.5 h-3.5"></i>
+            Probar Simulador
+          </a>
+          <a href="#contacto" class="inline-flex items-center gap-2 px-4 py-2 rounded bg-brand-navy text-white text-xs font-mono-tech uppercase tracking-wider hover:bg-brand-teal transition-all shadow-sm">
+            <span>Procesar Video</span>
+            <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section id="hero" class="relative pt-12 pb-24 md:pt-20 md:pb-32 bg-tech-grid overflow-hidden border-b border-slate-200">
+    <!-- Big faint watermark -->
+    <div class="absolute -top-10 left-1/2 -translate-x-1/2 select-none pointer-events-none text-slate-200/40 text-[18vw] font-black font-display tracking-tighter z-0 leading-none">
+      VISTRA
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      
+      <!-- Top Pill -->
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-mono-tech mb-6">
+        <span class="flex h-2 w-2 relative">
+          <span class="animate-ping-slow absolute inline-flex h-full w-full rounded-full bg-brand-teal opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-teal"></span>
+        </span>
+        <span>TRAFFIC VIDEO ANALYTICS AS A SERVICE • COLOMBIA</span>
+      </div>
+
+      <!-- Main Heading -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        
+        <div class="lg:col-span-7 space-y-6">
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-brand-navy font-display leading-[1.08] tracking-tight">
+            De un píxel <br class="hidden sm:block" />
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-navy via-brand-teal to-emerald-500">
+              a una decisión vial.
+            </span>
+          </h1>
+          
+          <p class="text-base sm:text-lg text-slate-600 max-w-2xl font-normal leading-relaxed">
+            Plataforma especializada de visión artificial para <strong>aforo, seguimiento y caracterización de tráfico</strong> en carreteras colombianas. Clasificamos vehículos de carga pesada por <strong>conteo estricto de ejes (C2 a C6)</strong> mediante fusión de evidencia geométrica y temporal.
+          </p>
+
+          <!-- Core Call to Actions -->
+          <div class="flex flex-wrap gap-4 pt-2">
+            <a href="#simulador" class="px-6 py-3.5 bg-brand-navy text-white text-sm font-semibold rounded-lg hover:bg-brand-teal transition-all shadow-md hover:shadow-lg flex items-center gap-2 group">
+              <span>Ver Simulador de Detección</span>
+              <i data-lucide="cpu" class="w-4 h-4 text-brand-teal group-hover:text-white transition-colors"></i>
+            </a>
+            
+            <a href="#ejes" class="px-6 py-3.5 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-300 hover:border-slate-400 hover:bg-slate-50 transition-all flex items-center gap-2">
+              <i data-lucide="scan" class="w-4 h-4 text-slate-500"></i>
+              <span>¿Cómo funciona el motor de ejes?</span>
+            </a>
+          </div>
+
+          <!-- Feature Checklist -->
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-6 text-xs font-mono-tech text-slate-600 border-t border-slate-200/80">
+            <div class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-teal"></i>
+              <span>Video Asincrónico 1080p</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-teal"></i>
+              <span>C2, C3, C4, C5 y C6</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <i data-lucide="check" class="w-4 h-4 text-brand-teal"></i>
+              <span>Trazabilidad 100% Auditable</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hero Technical Card (Inspired by Aevion LiDAR inspection visual) -->
+        <div class="lg:col-span-5">
+          <div class="bg-brand-navy rounded-2xl p-6 shadow-2xl border border-slate-800 text-white relative overflow-hidden group">
+            
+            <!-- Technical Grid Background -->
+            <div class="absolute inset-0 dark-tech-grid opacity-30 pointer-events-none"></div>
+            
+            <!-- Header bar of the card -->
+            <div class="flex items-center justify-between border-b border-slate-700/60 pb-4 mb-5 relative z-10">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span class="text-xs font-mono-tech uppercase tracking-wider text-slate-300">TELEMETRÍA EN TIEMPO REAL // VIZIA-CV</span>
+              </div>
+              <span class="text-[11px] font-mono-tech text-slate-400">FRAME #0492 • CAM_02</span>
+            </div>
+
+            <!-- Simulated Vehicle ROI Visualizer -->
+            <div class="relative bg-slate-900/90 rounded-xl p-4 border border-slate-700 overflow-hidden z-10">
+              
+              <!-- Simulated Highway Truck SVG illustration with CV Bounding Box -->
+              <div class="relative w-full h-44 flex items-center justify-center bg-gradient-to-b from-slate-950 to-slate-900 rounded-lg border border-slate-800">
+                
+                <!-- Road markings -->
+                <div class="absolute bottom-4 left-0 right-0 h-0.5 bg-dashed border-b border-dashed border-slate-700"></div>
+
+                <!-- Vector Truck silhouette with wheels -->
+                <svg viewBox="0 0 320 120" class="w-full h-auto max-h-36 drop-shadow-lg">
+                  <!-- Truck Body (Tractocamión con trailer C6) -->
+                  <path d="M 20 85 L 20 40 L 70 40 L 75 55 L 85 55 L 88 85 Z" fill="#334155" stroke="#64748b" stroke-width="1.5" />
+                  <!-- Cabina windshield -->
+                  <polygon points="65,45 74,56 60,56 60,45" fill="#00b493" opacity="0.6"/>
+                  <!-- Trailer -->
+                  <rect x="90" y="25" width="205" height="60" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" />
+                  <!-- Cargo details -->
+                  <line x1="95" y1="35" x2="290" y2="35" stroke="#334155" stroke-width="1" />
+                  <line x1="95" y1="50" x2="290" y2="50" stroke="#334155" stroke-width="1" />
+                  <line x1="95" y1="65" x2="290" y2="65" stroke="#334155" stroke-width="1" />
+                  
+                  <!-- Axles & Wheels (6 ejes) -->
+                  <!-- Eje 1 (Direccional Cabina) -->
+                  <circle cx="45" cy="88" r="10" fill="#0f172a" stroke="#00b493" stroke-width="2.5" />
+                  <circle cx="45" cy="88" r="4" fill="#00b493" />
+                  <!-- Eje 2 (Tandem Tractor) -->
+                  <circle cx="70" cy="88" r="10" fill="#0f172a" stroke="#00b493" stroke-width="2.5" />
+                  <circle cx="70" cy="88" r="4" fill="#00b493" />
+                  <!-- Eje 3 (Tandem Tractor) -->
+                  <circle cx="95" cy="88" r="10" fill="#0f172a" stroke="#00b493" stroke-width="2.5" />
+                  <circle cx="95" cy="88" r="4" fill="#00b493" />
+                  <!-- Eje 4 (Trailer Tridem 1) -->
+                  <circle cx="230" cy="88" r="10" fill="#0f172a" stroke="#00b493" stroke-width="2.5" />
+                  <circle cx="230" cy="88" r="4" fill="#00b493" />
+                  <!-- Eje 5 (Trailer Tridem 2) -->
+                  <circle cx="255" cy="88" r="10" fill="#0f172a" stroke="#00b493" stroke-width="2.5" />
+                  <circle cx="255" cy="88" r="4" fill="#00b493" />
+                  <!-- Eje 6 (Trailer Tridem 3) -->
+                  <circle cx="280" cy="88" r="10" fill="#0f172a" stroke="#00b493" stroke-width="2.5" />
+                  <circle cx="280" cy="88" r="4" fill="#00b493" />
+
+                  <!-- Bounding Box Overlays -->
+                  <rect x="15" y="20" width="285" height="82" fill="none" stroke="#00b493" stroke-width="1.5" stroke-dasharray="4 2" />
+                  <!-- Labels on SVG -->
+                  <rect x="15" y="8" width="110" height="15" fill="#00b493" rx="2" />
+                  <text x="20" y="19" fill="#0b192c" font-size="9" font-family="JetBrains Mono" font-weight="700">TRACK_ID #108 : CAMIÓN C6</text>
+                </svg>
+
+                <!-- Scanning Line animation -->
+                <div class="absolute inset-y-0 w-1 bg-gradient-to-b from-transparent via-brand-teal to-transparent opacity-70 animate-pulse pointer-events-none" style="left: 45%;"></div>
+              </div>
+
+              <!-- Real-time extraction tags -->
+              <div class="mt-4 grid grid-cols-3 gap-2 text-center font-mono-tech text-xs">
+                <div class="bg-slate-800/80 p-2 rounded border border-slate-700">
+                  <span class="text-[10px] text-slate-400 block uppercase">Clasificación</span>
+                  <span class="font-bold text-emerald-400 text-sm">CAMIÓN C6</span>
+                </div>
+                <div class="bg-slate-800/80 p-2 rounded border border-slate-700">
+                  <span class="text-[10px] text-slate-400 block uppercase">Ejes Estimados</span>
+                  <span class="font-bold text-white text-sm">6 Ejes (3+3)</span>
+                </div>
+                <div class="bg-slate-800/80 p-2 rounded border border-slate-700">
+                  <span class="text-[10px] text-slate-400 block uppercase">Confianza Fusión</span>
+                  <span class="font-bold text-emerald-400 text-sm">96.8 %</span>
+                </div>
+              </div>
+
+              <!-- Multi-frame Evidence strip -->
+              <div class="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono-tech text-slate-400">
+                <span class="flex items-center gap-1.5">
+                  <i data-lucide="layers" class="w-3.5 h-3.5 text-brand-teal"></i>
+                  <span>Fusión temporal: 38 frames válidos</span>
+                </span>
+                <span class="text-emerald-400 font-semibold">Validado ✓</span>
+              </div>
+
+            </div>
+
+            <!-- Footer summary -->
+            <div class="mt-4 flex items-center justify-between text-xs font-mono-tech text-slate-400 z-10 relative">
+              <span>Resolución Nativa: 1920×1080</span>
+              <span>Regla: Eje levantado contabilizado</span>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- SECTION 01: GEAR / SPECIFICATIONS (Directly inspired by Aevion Gear section) -->
+  <section id="arquitectura" class="py-20 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div>
+          <span class="text-xs font-mono-tech text-brand-teal tracking-widest uppercase block mb-2">01 // ARQUITECTURA DEL SISTEMA</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-navy font-display">
+            Más que un detector neuronal: <br />
+            un sistema multicapa de alta fidelidad.
+          </h2>
+        </div>
+        <p class="text-sm sm:text-base text-slate-600 max-w-md">
+          Un solo modelo neuronal puede equivocarse entre un C4 y un C5. VISTRA integra detección, tracking por ID, análisis geométrico de ruedas y modelado de incertidumbre.
+        </p>
+      </div>
+
+      <!-- 4 Pillars / Gear Spec Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        
+        <!-- Pillar 1 -->
+        <div class="p-6 rounded-xl bg-slate-50 border border-slate-200/80 glow-card relative">
+          <div class="w-10 h-10 rounded-lg bg-brand-navy flex items-center justify-center text-white mb-5 shadow-sm">
+            <i data-lucide="video" class="w-5 h-5 text-brand-teal"></i>
+          </div>
+          <span class="text-[11px] font-mono-tech uppercase tracking-wider text-slate-400 block mb-1">Entrada Asincrónica</span>
+          <h3 class="text-lg font-bold text-brand-navy mb-2 font-display">Video Full HD 1080p</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Procesamiento offline de grabaciones de cámaras fijas en carreteras. Permite utilizar modelos más profundos sin sacrificar precisión por tiempo real.
+          </p>
+          <div class="pt-3 border-t border-slate-200 font-mono-tech text-[11px] text-brand-teal font-semibold">
+            Cero pérdida de frames críticos
+          </div>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="p-6 rounded-xl bg-slate-50 border border-slate-200/80 glow-card relative">
+          <div class="w-10 h-10 rounded-lg bg-brand-navy flex items-center justify-center text-white mb-5 shadow-sm">
+            <i data-lucide="git-commit" class="w-5 h-5 text-brand-teal"></i>
+          </div>
+          <span class="text-[11px] font-mono-tech uppercase tracking-wider text-slate-400 block mb-1">Seguimiento Temporal</span>
+          <h3 class="text-lg font-bold text-brand-navy mb-2 font-display">ByteTrack & Best-Frame</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Cada vehículo recibe un ID único seguido durante decenas de frames. El sistema descarta oclusiones y selecciona los mejores ángulos para clasificar.
+          </p>
+          <div class="pt-3 border-t border-slate-200 font-mono-tech text-[11px] text-brand-teal font-semibold">
+            Índice de Calidad Visual dinámico
+          </div>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="p-6 rounded-xl bg-slate-50 border border-slate-200/80 glow-card relative">
+          <div class="w-10 h-10 rounded-lg bg-brand-navy flex items-center justify-center text-white mb-5 shadow-sm">
+            <i data-lucide="disc" class="w-5 h-5 text-brand-teal"></i>
+          </div>
+          <span class="text-[11px] font-mono-tech uppercase tracking-wider text-slate-400 block mb-1">Diferenciador Clave</span>
+          <h3 class="text-lg font-bold text-brand-navy mb-2 font-display">Subsistema de Ruedas</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Detector secundario de ruedas sobre el ROI del camión. Algoritmo geométrico que distingue ruedas gemelas, lados opuestos y estimación de ejes estructurales.
+          </p>
+          <div class="pt-3 border-t border-slate-200 font-mono-tech text-[11px] text-brand-teal font-semibold">
+            E = f(W, G, T)
+          </div>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="p-6 rounded-xl bg-slate-50 border border-slate-200/80 glow-card relative">
+          <div class="w-10 h-10 rounded-lg bg-brand-navy flex items-center justify-center text-white mb-5 shadow-sm">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-brand-teal"></i>
+          </div>
+          <span class="text-[11px] font-mono-tech uppercase tracking-wider text-slate-400 block mb-1">Honestidad Técnica</span>
+          <h3 class="text-lg font-bold text-brand-navy mb-2 font-display">Control de Incertidumbre</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Si la visibilidad es precaria o hay oclusión severa, se etiqueta como <em>Camión Indefinido</em>. No forzamos falsos positivos: generamos aforos confiables.
+          </p>
+          <div class="pt-3 border-t border-slate-200 font-mono-tech text-[11px] text-brand-teal font-semibold">
+            100% de conteo sin sesgos
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pipeline Step Flowchart -->
+      <div class="mt-16 bg-slate-900 rounded-2xl p-6 sm:p-8 text-white relative overflow-hidden">
+        <div class="absolute inset-0 dark-tech-grid opacity-20 pointer-events-none"></div>
+        
+        <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+          <span class="text-xs font-mono-tech uppercase tracking-wider text-emerald-400">FLUIDEZ DEL PIPELINE DE PROCESAMIENTO</span>
+          <span class="text-xs font-mono-tech text-slate-400">AUDITABILIDAD DE PUNTA A PUNTA</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-center text-xs font-mono-tech">
+          <div class="p-3 rounded bg-slate-800/80 border border-slate-700">
+            <span class="text-slate-400 text-[10px] block">PASO 01</span>
+            <span class="font-bold text-white text-xs">Video 1080p</span>
+          </div>
+          <div class="p-3 rounded bg-slate-800/80 border border-slate-700">
+            <span class="text-slate-400 text-[10px] block">PASO 02</span>
+            <span class="font-bold text-white text-xs">Detector YOLO</span>
+          </div>
+          <div class="p-3 rounded bg-slate-800/80 border border-slate-700">
+            <span class="text-slate-400 text-[10px] block">PASO 03</span>
+            <span class="font-bold text-white text-xs">Tracking ID</span>
+          </div>
+          <div class="p-3 rounded bg-slate-800/80 border border-brand-teal/60 bg-brand-navy">
+            <span class="text-brand-teal text-[10px] block font-bold">PASO 04</span>
+            <span class="font-bold text-emerald-300 text-xs">Ruedas & Ejes</span>
+          </div>
+          <div class="p-3 rounded bg-slate-800/80 border border-brand-teal/60 bg-brand-navy">
+            <span class="text-brand-teal text-[10px] block font-bold">PASO 05</span>
+            <span class="font-bold text-emerald-300 text-xs">Fusión Evidencias</span>
+          </div>
+          <div class="p-3 rounded bg-slate-800/80 border border-slate-700">
+            <span class="text-slate-400 text-[10px] block">PASO 06</span>
+            <span class="font-bold text-white text-xs">Línea Virtual</span>
+          </div>
+          <div class="p-3 rounded bg-emerald-950/60 border border-emerald-500/40">
+            <span class="text-emerald-400 text-[10px] block font-bold">RESULTADO</span>
+            <span class="font-bold text-emerald-300 text-xs">Reporte & Excel</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- SECTION 02: MOTOR DE EJES Y TAXONOMÍA (Diferenciador central) -->
+  <section id="ejes" class="py-20 bg-slate-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="max-w-3xl mb-12">
+        <span class="text-xs font-mono-tech text-brand-teal tracking-widest uppercase block mb-2">02 // TAXONOMÍA Y REGLA DE EJES</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-navy font-display">
+          La diferencia entre contar un camión y entender el impacto en la carretera.
+        </h2>
+        <p class="text-slate-600 mt-3 text-sm sm:text-base">
+          Para estudios de ingeniería vial y diseño de pavimentos, un camión C2 (2 ejes) genera un efecto destructivo y logístico completamente diferente al de un tractocamión C6 (6 ejes). VISTRA no los homogeniza.
+        </p>
+      </div>
+
+      <!-- Regla Operativa de Ejes Banner -->
+      <div class="bg-white rounded-xl p-6 border-l-4 border-l-brand-teal border border-slate-200 shadow-sm mb-12">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <i data-lucide="info" class="w-4 h-4 text-brand-teal"></i>
+              <span class="text-xs font-mono-tech uppercase font-bold text-brand-navy">Regla Operativa Fundamental</span>
+            </div>
+            <p class="text-sm text-slate-700 font-medium">
+              <strong>VISTRA contabiliza la configuración estructural del vehículo</strong>: Se cuenta el número total de ejes, independientemente de que alguno esté levantado neumáticamente y no toque el asfalto.
+            </p>
+          </div>
+          <div class="bg-slate-50 px-4 py-2 rounded border border-slate-200 text-xs font-mono-tech text-slate-600 whitespace-nowrap">
+            Ruedas Gemelas = 1 Solo Eje
+          </div>
+        </div>
+      </div>
+
+      <!-- Taxonomy Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        <!-- C2 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm hover:border-brand-teal transition-all">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2.5 py-1 rounded bg-slate-100 text-brand-navy font-mono-tech font-bold text-xs">C2</span>
+            <span class="text-[11px] font-mono-tech text-slate-500">2 Ejes • Camión Rígido</span>
+          </div>
+          <div class="h-20 bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-3 border border-slate-100">
+            <!-- Icon representation of C2 -->
+            <svg viewBox="0 0 160 50" class="w-full h-12">
+              <rect x="20" y="10" width="120" height="25" rx="2" fill="#cbd5e1"/>
+              <rect x="20" y="15" width="25" height="20" fill="#94a3b8"/>
+              <!-- 2 Axles -->
+              <circle cx="35" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="125" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="text-xs text-slate-600">Camiones medianos o furgones de 2 ejes. Distribución clásica 1 eje directriz + 1 eje motriz trasero.</p>
+        </div>
+
+        <!-- C3 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm hover:border-brand-teal transition-all">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2.5 py-1 rounded bg-slate-100 text-brand-navy font-mono-tech font-bold text-xs">C3</span>
+            <span class="text-[11px] font-mono-tech text-slate-500">3 Ejes • Doble Troque</span>
+          </div>
+          <div class="h-20 bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-3 border border-slate-100">
+            <svg viewBox="0 0 160 50" class="w-full h-12">
+              <rect x="20" y="10" width="120" height="25" rx="2" fill="#cbd5e1"/>
+              <rect x="20" y="15" width="25" height="20" fill="#94a3b8"/>
+              <!-- 3 Axles -->
+              <circle cx="35" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="115" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="132" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="text-xs text-slate-600">Camión rígido con tándem trasero de 2 ejes. Común en transporte de materiales y volquetas de obra.</p>
+        </div>
+
+        <!-- C4 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm hover:border-brand-teal transition-all">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2.5 py-1 rounded bg-slate-100 text-brand-navy font-mono-tech font-bold text-xs">C4</span>
+            <span class="text-[11px] font-mono-tech text-slate-500">4 Ejes • Cuatro Manos / Articulado</span>
+          </div>
+          <div class="h-20 bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-3 border border-slate-100">
+            <svg viewBox="0 0 160 50" class="w-full h-12">
+              <rect x="20" y="10" width="120" height="25" rx="2" fill="#cbd5e1"/>
+              <!-- 4 Axles -->
+              <circle cx="30" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="45" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="115" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="132" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="text-xs text-slate-600">Configuración con doble eje direccional o tractocamión corto de 4 ejes. Frecuente confusión en YOLO simple.</p>
+        </div>
+
+        <!-- C5 -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm hover:border-brand-teal transition-all">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2.5 py-1 rounded bg-slate-100 text-brand-navy font-mono-tech font-bold text-xs">C5</span>
+            <span class="text-[11px] font-mono-tech text-slate-500">5 Ejes • Tractomula 2S3 / 3S2</span>
+          </div>
+          <div class="h-20 bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-3 border border-slate-100">
+            <svg viewBox="0 0 160 50" class="w-full h-12">
+              <rect x="15" y="16" width="35" height="19" fill="#94a3b8"/>
+              <rect x="52" y="8" width="95" height="27" rx="2" fill="#cbd5e1"/>
+              <!-- 5 Axles -->
+              <circle cx="25" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="45" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="110" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="125" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="140" cy="38" r="7" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="text-xs text-slate-600">Tractocamión con semirremolque de 5 ejes totales. Requiere confirmación de ruedas para no confundir con C6.</p>
+        </div>
+
+        <!-- C6 -->
+        <div class="bg-white p-5 rounded-xl border border-brand-teal/40 shadow-sm hover:border-brand-teal transition-all bg-emerald-50/20">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2.5 py-1 rounded bg-brand-navy text-emerald-400 font-mono-tech font-bold text-xs">C6</span>
+            <span class="text-[11px] font-mono-tech text-brand-teal font-semibold">6 Ejes • Máxima Carga (3S3)</span>
+          </div>
+          <div class="h-20 bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-3 border border-slate-100">
+            <svg viewBox="0 0 160 50" class="w-full h-12">
+              <rect x="15" y="16" width="40" height="19" fill="#94a3b8"/>
+              <rect x="57" y="8" width="90" height="27" rx="2" fill="#cbd5e1"/>
+              <!-- 6 Axles -->
+              <circle cx="23" cy="38" r="6" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="39" cy="38" r="6" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="51" cy="38" r="6" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="115" cy="38" r="6" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="128" cy="38" r="6" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+              <circle cx="141" cy="38" r="6" fill="#0b192c" stroke="#00b493" stroke-width="2"/>
+            </svg>
+          </div>
+          <p class="text-xs text-slate-600">Tractocamión con semirremolque de 3 ejes traseros (trídem). Principal causante de fatiga de pavimento en Colombia.</p>
+        </div>
+
+        <!-- Demás Actores Viales -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-mono-tech font-bold text-xs">Motos • Livianos • Buses</span>
+            <span class="text-[11px] font-mono-tech text-slate-500">Tráfico Mixto</span>
+          </div>
+          <div class="h-20 bg-slate-50 rounded-lg flex items-center justify-center p-2 mb-3 border border-slate-100 text-slate-400 gap-4">
+            <i data-lucide="bike" class="w-6 h-6 text-slate-600"></i>
+            <i data-lucide="car" class="w-6 h-6 text-slate-600"></i>
+            <i data-lucide="bus" class="w-6 h-6 text-slate-600"></i>
+          </div>
+          <p class="text-xs text-slate-600">Aforo simultáneo de todo el espectro vial: motocicletas, automóviles, camionetas, vans, microbuses y buses intermunicipales.</p>
+        </div>
+
+      </div>
+
+      <!-- Fusión de Evidencias Explicación Matemática -->
+      <div class="mt-12 p-6 rounded-xl bg-brand-navy text-white border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div class="lg:col-span-8 space-y-3">
+          <span class="text-xs font-mono-tech text-emerald-400 uppercase tracking-wider block">FUSIÓN DUAL DE EVIDENCIA BAYESIANA</span>
+          <h3 class="text-xl font-bold font-display">¿Por qué nuestro método supera al conteo convencional?</h3>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Combinamos la probabilidad global del vehículo con la probabilidad de la configuración geométrica de ejes:
+          </p>
+          <div class="font-mono-tech text-xs bg-slate-900/90 p-3 rounded border border-slate-700 text-emerald-300 inline-block">
+            Score(C<sub>i</sub>) = α · P(C<sub>i</sub> | Apariencia) + β · P(C<sub>i</sub> | Ejes Estimados)
+          </div>
+        </div>
+        <div class="lg:col-span-4 border-l border-slate-800 pl-0 lg:pl-6 text-xs text-slate-400 space-y-2 font-mono-tech">
+          <div><strong class="text-white">α + β = 1</strong> (Pesos ajustables)</div>
+          <div><strong class="text-white">E = f(W, G, T)</strong> (Ruedas, Geometría, Tiempo)</div>
+          <div><strong class="text-emerald-400">P &lt; Umbral → Camión Indefinido</strong></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- SECTION 03: SOLUCIONES POR SECTOR (Inspirado en Aevion Solutions) -->
+  <section id="soluciones" class="py-20 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div>
+          <span class="text-xs font-mono-tech text-brand-teal tracking-widest uppercase block mb-2">03 // MERCADO Y SECTORES</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-navy font-display">
+            Diseñado para las necesidades de la <br />
+            ingeniería vial e infraestructura en Colombia.
+          </h2>
+        </div>
+        <p class="text-sm sm:text-base text-slate-600 max-w-md">
+          Eliminamos el error humano de los aforistas en turnos extenuantes y reducimos los tiempos de entrega de semanas a horas.
+        </p>
+      </div>
+
+      <!-- Solutions Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        
+        <!-- Sector 1 -->
+        <div class="p-6 rounded-xl border border-slate-200 hover:border-brand-teal transition-all glow-card bg-slate-50/50">
+          <div class="w-12 h-12 rounded-lg bg-emerald-100/60 flex items-center justify-center text-brand-teal mb-5">
+            <i data-lucide="compass" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-brand-navy mb-2 font-display">Firmas de Consultoría & Tránsito</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Aforos vehiculares estructurados para estudios de impacto vial, planes de movilidad urbana (PMUS), cálculo de TPDA (Tránsito Promedio Diario Anual) y modelación de transporte.
+          </p>
+          <ul class="text-xs space-y-1.5 text-slate-700 font-mono-tech">
+            <li class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-brand-teal"></i>
+              Entrega en matriz horaria Excel
+            </li>
+            <li class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-brand-teal"></i>
+              Desglose completo por sentidos
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sector 2 -->
+        <div class="p-6 rounded-xl border border-slate-200 hover:border-brand-teal transition-all glow-card bg-slate-50/50">
+          <div class="w-12 h-12 rounded-lg bg-blue-100/60 flex items-center justify-center text-blue-600 mb-5">
+            <i data-lucide="hard-hat" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-brand-navy mb-2 font-display">Concesiones Viales (APP 4G / 5G)</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Auditoría de volúmenes de peaje, caracterización de corredores de carga pesada y cálculo de ejes equivalentes de 8.2 toneladas (ESALs) para predecir deterioro de carpeta asfáltica.
+          </p>
+          <ul class="text-xs space-y-1.5 text-slate-700 font-mono-tech">
+            <li class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-brand-teal"></i>
+              Diferenciación exacta C2 vs C6
+            </li>
+            <li class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-brand-teal"></i>
+              Auditoría visual con video marcado
+            </li>
+          </ul>
+        </div>
+
+        <!-- Sector 3 -->
+        <div class="p-6 rounded-xl border border-slate-200 hover:border-brand-teal transition-all glow-card bg-slate-50/50">
+          <div class="w-12 h-12 rounded-lg bg-purple-100/60 flex items-center justify-center text-purple-600 mb-5">
+            <i data-lucide="building-2" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-brand-navy mb-2 font-display">Entidades Territoriales & INVIAS</h3>
+          <p class="text-xs text-slate-600 leading-relaxed mb-4">
+            Monitoreo independiente para interventorías de contratos viales, auditorías de tránsito en proyectos de infraestructura y planeación de transporte de carga nacional.
+          </p>
+          <ul class="text-xs space-y-1.5 text-slate-700 font-mono-tech">
+            <li class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-brand-teal"></i>
+              Sin instalaciones intrusivas en vía
+            </li>
+            <li class="flex items-center gap-1.5">
+              <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-brand-teal"></i>
+              Resultados 100% verificables
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- SECTION 04: DEMO LAB INTERACTIVO (Live Simulation) -->
+  <section id="simulador" class="py-20 bg-brand-navy text-white relative border-b border-slate-800">
+    <div class="absolute inset-0 dark-tech-grid opacity-25 pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      
+      <!-- Section Intro -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+        <div>
+          <span class="text-xs font-mono-tech text-emerald-400 tracking-widest uppercase block mb-2">04 // SIMULADOR INTERACTIVO DE AFORO</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold font-display">
+            Laboratorio de Visión Vial en Vivo
+          </h2>
+          <p class="text-sm text-slate-300 mt-2 max-w-xl">
+            Experimenta en tiempo real cómo el pipeline de VISTRA detecta vehículos, localiza sus ruedas, infiere ejes y registra el conteo oficial al cruzar la línea virtual.
+          </p>
+        </div>
+
+        <!-- Controls Bar -->
+        <div class="flex flex-wrap items-center gap-3">
+          <button id="btn-toggle-sim" class="px-4 py-2 rounded bg-brand-teal text-brand-navy text-xs font-mono-tech font-bold uppercase tracking-wider hover:bg-emerald-400 transition-colors flex items-center gap-2">
+            <i data-lucide="pause" id="icon-sim-status" class="w-3.5 h-3.5"></i>
+            <span id="text-sim-status">Pausar Simulación</span>
+          </button>
+          
+          <button id="btn-add-truck" class="px-3 py-2 rounded bg-slate-800 text-white text-xs font-mono-tech border border-slate-700 hover:border-slate-500 transition-colors flex items-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5 text-emerald-400"></i>
+            Inyectar Camión C5/C6
+          </button>
+
+          <button id="btn-reset-sim" class="px-3 py-2 rounded bg-slate-800 text-slate-300 text-xs font-mono-tech border border-slate-700 hover:text-white transition-colors">
+            Reiniciar Conteo
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Simulator Layout: Canvas + Telemetry Dashboard -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Canvas Video Highway Simulator (Col 7) -->
+        <div class="lg:col-span-7 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-2xl">
+          
+          <!-- Top bar with camera metadata -->
+          <div class="px-4 py-2.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-xs font-mono-tech text-slate-400">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span class="text-white font-bold">ESTACIÓN_04 • RUTA 45 (BOGOTÁ - GIRARDOT)</span>
+            </div>
+            <div class="flex items-center gap-4 text-[11px]">
+              <span>KM 18+400</span>
+              <span class="text-emerald-400">FPS: 30.0</span>
+            </div>
+          </div>
+
+          <!-- HTML5 Canvas Element -->
+          <div class="relative w-full aspect-[16/9] bg-slate-950">
+            <canvas id="trafficCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+            
+            <!-- Virtual overlay legend -->
+            <div class="absolute bottom-2 left-2 bg-slate-900/90 backdrop-blur px-2.5 py-1.5 rounded border border-slate-800 text-[10px] font-mono-tech text-slate-300 space-y-0.5 pointer-events-none">
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 bg-brand-teal inline-block"></span>
+                <span>Línea Virtual de Aforo</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
+                <span>Ruedas Detectadas</span>
+              </div>
+            </div>
+
+            <div class="absolute top-2 right-2 bg-slate-900/90 backdrop-blur px-2 py-1 rounded border border-slate-800 text-[10px] font-mono-tech text-slate-400 pointer-events-none">
+              Haz clic en cualquier vehículo en la tabla para auditar
+            </div>
+          </div>
+
+          <!-- Canvas controls & speed -->
+          <div class="px-4 py-2 bg-slate-900/80 border-t border-slate-800 flex items-center justify-between text-xs font-mono-tech text-slate-400">
+            <span>Algoritmo: YOLO11 + ByteTrack + AxleEngine</span>
+            <span class="text-slate-300">Modo: Offline Full Audit</span>
+          </div>
+
+        </div>
+
+        <!-- Live Tally & Telemetry Metrics (Col 5) -->
+        <div class="lg:col-span-5 space-y-5">
+          
+          <!-- Consolidated Count Box -->
+          <div class="bg-slate-900/90 rounded-xl p-5 border border-slate-800">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="bar-chart-2" class="w-4 h-4 text-brand-teal"></i>
+                <h3 class="text-xs font-mono-tech uppercase font-bold text-white tracking-wider">Aforo Acumulado en Vivo</h3>
+              </div>
+              <div class="text-xs font-mono-tech text-slate-400">
+                Total: <span id="total-count" class="font-bold text-emerald-400 text-sm">0</span> veh.
+              </div>
+            </div>
+
+            <!-- Vehicles Count Grid -->
+            <div class="grid grid-cols-3 sm:grid-cols-4 gap-2 text-center font-mono-tech text-xs">
+              <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">Motos</span>
+                <span id="count-moto" class="text-sm font-bold text-white">0</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">Livianos</span>
+                <span id="count-auto" class="text-sm font-bold text-white">0</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                <span class="text-[10px] text-slate-400 block">Buses</span>
+                <span id="count-bus" class="text-sm font-bold text-white">0</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                <span class="text-[10px] text-slate-400 block text-brand-teal">C2</span>
+                <span id="count-c2" class="text-sm font-bold text-brand-teal">0</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                <span class="text-[10px] text-slate-400 block text-brand-teal">C3</span>
+                <span id="count-c3" class="text-sm font-bold text-brand-teal">0</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                <span class="text-[10px] text-slate-400 block text-brand-teal">C4</span>
+                <span id="count-c4" class="text-sm font-bold text-brand-teal">0</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded border border-slate-800">
+                <span class="text-[10px] text-slate-400 block text-brand-teal">C5</span>
+                <span id="count-c5" class="text-sm font-bold text-brand-teal">0</span>
+              </div>
+              <div class="bg-slate-950 p-2 rounded border border-emerald-500/40 bg-emerald-950/20">
+                <span class="text-[10px] text-emerald-400 block font-bold">C6</span>
+                <span id="count-c6" class="text-sm font-bold text-emerald-400">0</span>
+              </div>
+            </div>
+
+            <!-- Camión Indefinido Safety Stat -->
+            <div class="mt-3 p-2.5 rounded bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs font-mono-tech text-slate-400">
+              <span class="flex items-center gap-1.5">
+                <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Camión Indefinido (Incertidumbre):</span>
+              </span>
+              <span id="count-indef" class="text-amber-400 font-bold">0</span>
+            </div>
+
+          </div>
+
+          <!-- Real-time Audit Log Table (Click to open Inspector) -->
+          <div class="bg-slate-900/90 rounded-xl p-5 border border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <span class="text-xs font-mono-tech uppercase font-bold text-white tracking-wider">Bitácora de Trazabilidad</span>
+              <span class="text-[10px] font-mono-tech text-slate-400">Últimos cruces registrados</span>
+            </div>
+
+            <div class="overflow-x-auto max-h-48 scrollbar-thin">
+              <table class="w-full text-left font-mono-tech text-xs">
+                <thead>
+                  <tr class="text-[10px] text-slate-500 border-b border-slate-800">
+                    <th class="pb-1.5">HORA</th>
+                    <th class="pb-1.5">TRACK ID</th>
+                    <th class="pb-1.5">CLASE</th>
+                    <th class="pb-1.5">EJES</th>
+                    <th class="pb-1.5 text-right">AUDITAR</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table-body" class="divide-y divide-slate-800/60 text-slate-300">
+                  <!-- Populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between font-mono-tech">
+              <span>Auditoría frame a frame garantizada</span>
+              <button onclick="downloadCSVReport()" class="text-brand-teal hover:underline flex items-center gap-1">
+                <i data-lucide="download" class="w-3 h-3"></i>
+                Descargar Muestra CSV
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- MODAL DE AUDITORÍA FORENSE VEHICULAR (Trazabilidad detallada) -->
+  <div id="audit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-brand-navy border border-slate-700 rounded-2xl max-w-2xl w-full p-6 text-white shadow-2xl relative">
+      
+      <!-- Close Button -->
+      <button onclick="closeAuditModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-2 text-xs font-mono-tech text-emerald-400 mb-2">
+        <i data-lucide="check-circle" class="w-4 h-4"></i>
+        <span>REGISTRO FORENSE DE DETECCIÓN // SISTEMA VISTRA</span>
+      </div>
+
+      <h3 id="modal-vehicle-title" class="text-2xl font-bold font-display text-white mb-4">
+        Auditoría de Vehículo #TRK-102
+      </h3>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 text-xs font-mono-tech">
+        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
+          <span class="text-slate-400 block">Estampilla Temporal:</span>
+          <span id="modal-timestamp" class="text-white font-bold">14:22:08.412</span>
+        </div>
+        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
+          <span class="text-slate-400 block">Sentido / Carril:</span>
+          <span id="modal-direction" class="text-white font-bold">Norte-Sur / Carril 1</span>
+        </div>
+        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
+          <span class="text-slate-400 block">Clasificación Definitiva:</span>
+          <span id="modal-final-class" class="text-emerald-400 font-bold text-sm">CAMIÓN C6 (6 Ejes)</span>
+        </div>
+        <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-1">
+          <span class="text-slate-400 block">Score Fusión Bayesiana:</span>
+          <span id="modal-confidence" class="text-emerald-400 font-bold text-sm">97.4 %</span>
+        </div>
+      </div>
+
+      <!-- Fusión breakdown details -->
+      <div class="bg-slate-900 p-4 rounded-lg border border-slate-800 mb-6 text-xs space-y-3 font-mono-tech">
+        <span class="text-slate-400 block font-bold uppercase">Desglose de Evidencias Combinadas:</span>
+        <div class="space-y-2">
+          <div class="flex justify-between">
+            <span class="text-slate-300">1. Probabilidad Apariencia Global (YOLO):</span>
+            <span id="modal-p-vehicle" class="text-white font-semibold">P(C6|V) = 0.89</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">2. Probabilidad Estimación de Ejes:</span>
+            <span id="modal-p-axle" class="text-white font-semibold">P(6 Ejes|E) = 0.99</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-300">3. Ruedas Físicas Mapeadas (W):</span>
+            <span id="modal-wheels-count" class="text-emerald-300">6 ruedas visibles coincidentes</span>
+          </div>
+          <div class="flex justify-between border-t border-slate-800 pt-2">
+            <span class="text-slate-300">4. Frames evaluados en el Track:</span>
+            <span id="modal-frames-count" class="text-white">42 frames (Best-Frame Quality: 0.94)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <span class="text-[11px] font-mono-tech text-slate-400">¿Dudas sobre el reporte? Toda evidencia se guarda en video.</span>
+        <button onclick="closeAuditModal()" class="px-4 py-2 bg-slate-800 text-white rounded text-xs font-mono-tech hover:bg-slate-700 transition-colors">
+          Cerrar Auditoría
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- SECTION 05: ENTREGABLES Y ANALYTICS (Reportes y Excel) -->
+  <section id="entregables" class="py-20 bg-slate-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+        <div>
+          <span class="text-xs font-mono-tech text-brand-teal tracking-widest uppercase block mb-2">05 // ENTREGABLES COMERCIALES</span>
+          <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-navy font-display">
+            Información ejecutiva y técnica lista para <br />
+            incorporar en tus informes de tránsito.
+          </h2>
+        </div>
+        <p class="text-sm sm:text-base text-slate-600 max-w-md">
+          No te entregamos cajas negras ni datos crudos incomprensibles. Recibes matrices en Excel normalizadas bajo estándares colombianos y tableros analíticos.
+        </p>
+      </div>
+
+      <!-- Deliverables Display: Chart + Excel Preview -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        
+        <!-- Left: Interactive Distribution Chart -->
+        <div class="lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+            <div>
+              <h3 class="text-sm font-bold text-brand-navy font-display">Distribución Típica de Tráfico Pesado (C2 a C6)</h3>
+              <span class="text-[11px] font-mono-tech text-slate-500">Muestra consolidada de 24 horas</span>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-mono-tech font-semibold">VISTRA Analytics</span>
+          </div>
+
+          <!-- Chart.js Container -->
+          <div class="h-64 relative">
+            <canvas id="trafficChart"></canvas>
+          </div>
+
+          <div class="mt-4 pt-4 border-t border-slate-100 grid grid-cols-3 text-center text-xs font-mono-tech">
+            <div>
+              <span class="text-slate-400 block text-[10px]">Carga Pesada Total</span>
+              <span class="font-bold text-brand-navy">3,932 veh.</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">Dominancia</span>
+              <span class="font-bold text-brand-teal">C2 (55.8%)</span>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px]">Alto Impacto (C5/C6)</span>
+              <span class="font-bold text-brand-navy">479 veh.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Excel Report Mockup & Download -->
+        <div class="lg:col-span-6 space-y-6">
+          
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-bold">
+                <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h4 class="text-base font-bold text-brand-navy font-display">Reporte Oficial de Aforo (Formato Excel / CSV)</h4>
+                <p class="text-xs text-slate-500">Estructurado por intervalos de 15 min, hora a hora y por sentido de circulación.</p>
+              </div>
+            </div>
+
+            <!-- Simulated Excel Sheet Table -->
+            <div class="border border-slate-200 rounded-lg overflow-hidden text-[11px] font-mono-tech bg-slate-50">
+              <div class="bg-slate-200 px-3 py-1.5 font-bold text-slate-700 border-b border-slate-300 flex justify-between">
+                <span>INFORME_AFORO_ESTACION_01.XLSX</span>
+                <span>HOJA: CONSOLIDADO_HORARIO</span>
+              </div>
+              <div class="p-2 space-y-1 divide-y divide-slate-200 text-slate-700">
+                <div class="grid grid-cols-6 py-1 font-bold text-slate-500 text-[10px]">
+                  <span>HORA</span>
+                  <span>AUTOS</span>
+                  <span>BUSES</span>
+                  <span>C2</span>
+                  <span>C3-C4</span>
+                  <span class="text-brand-teal">C5-C6</span>
+                </div>
+                <div class="grid grid-cols-6 py-1">
+                  <span>07:00-08:00</span>
+                  <span>842</span>
+                  <span>64</span>
+                  <span>118</span>
+                  <span>42</span>
+                  <span class="font-bold text-brand-navy">31</span>
+                </div>
+                <div class="grid grid-cols-6 py-1">
+                  <span>08:00-09:00</span>
+                  <span>1,024</span>
+                  <span>78</span>
+                  <span>145</span>
+                  <span>56</span>
+                  <span class="font-bold text-brand-navy">45</span>
+                </div>
+                <div class="grid grid-cols-6 py-1">
+                  <span>09:00-10:00</span>
+                  <span>910</span>
+                  <span>51</span>
+                  <span>132</span>
+                  <span>49</span>
+                  <span class="font-bold text-brand-navy">38</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <span class="text-xs text-slate-500 font-mono-tech">Listo para anexos de interventoría</span>
+              <button onclick="downloadCSVReport()" class="px-4 py-2 bg-brand-navy text-white text-xs font-mono-tech rounded hover:bg-brand-teal transition-colors flex items-center gap-2">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                Descargar Plantilla Demo (.CSV)
+              </button>
+            </div>
+          </div>
+
+          <!-- Video Audit Deliverable Card -->
+          <div class="p-4 rounded-xl bg-slate-100 border border-slate-200 flex items-start gap-4">
+            <i data-lucide="video" class="w-6 h-6 text-brand-teal mt-0.5 flex-shrink-0"></i>
+            <div>
+              <h5 class="text-sm font-bold text-brand-navy">Video de Auditoría Marcado Opcional</h5>
+              <p class="text-xs text-slate-600 mt-1">
+                Entregamos si se requiere el video procesado con las cajas de detección, el ID de track y el contador en pantalla para verificación visual inmediata ante la interventoría.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- SECTION 06: INVESTIGACIÓN Y RIGOR DE TESIS (Maestría) -->
+  <section id="investigacion" class="py-20 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="max-w-3xl mb-12">
+        <span class="text-xs font-mono-tech text-brand-teal tracking-widest uppercase block mb-2">06 // RIGOR ACADÉMICO & TESIS DE MAESTRÍA</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-navy font-display">
+          Validación científica y experimentación rigurosa.
+        </h2>
+        <p class="text-slate-600 mt-3 text-sm sm:text-base">
+          No somos un simple wrapper de código abierto. El núcleo de VISTRA se fundamenta en investigación aplicada de maestría con evaluación experimental por componentes (Ablation Study) y métricas orientadas a la física del problema.
+        </p>
+      </div>
+
+      <!-- Ablation Study Table & MAE metric -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Table: Ablation Study (Exp A to F) -->
+        <div class="lg:col-span-8 bg-slate-50 rounded-xl border border-slate-200 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-base font-bold text-brand-navy font-display">Estudio de Ablación Experimental</h3>
+            <span class="text-xs font-mono-tech text-slate-500">Evaluación del aporte de cada módulo</span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left font-mono-tech text-xs">
+              <thead>
+                <tr class="text-[10px] text-slate-500 border-b border-slate-300 pb-2">
+                  <th class="py-2">EXP.</th>
+                  <th class="py-2">ARQUITECTURA EXPERIMENTAL</th>
+                  <th class="py-2">ACCURACY PESADOS</th>
+                  <th class="py-2">MAE EJES</th>
+                  <th class="py-2 text-right">ESTADO</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 text-slate-700">
+                <tr>
+                  <td class="py-2.5 font-bold">A</td>
+                  <td>YOLO Directo (Solo apariencia del vehículo)</td>
+                  <td class="text-slate-500">76.4 %</td>
+                  <td class="text-slate-500">0.82</td>
+                  <td class="text-right text-slate-400">Baseline</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 font-bold">B</td>
+                  <td>Vehículo + Tracking Temporal</td>
+                  <td>82.1 %</td>
+                  <td>0.64</td>
+                  <td class="text-right text-slate-600">+5.7%</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 font-bold">C</td>
+                  <td>Vehículo + Detector Secundario de Ruedas</td>
+                  <td>86.8 %</td>
+                  <td>0.41</td>
+                  <td class="text-right text-slate-600">+10.4%</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 font-bold">D</td>
+                  <td>Vehículo + Tracking + Ruedas</td>
+                  <td>91.3 %</td>
+                  <td>0.26</td>
+                  <td class="text-right text-slate-600">+14.9%</td>
+                </tr>
+                <tr>
+                  <td class="py-2.5 font-bold">E</td>
+                  <td>Vehículo + Tracking + Ruedas + Best-Frame</td>
+                  <td>94.7 %</td>
+                  <td>0.14</td>
+                  <td class="text-right text-emerald-600 font-semibold">+18.3%</td>
+                </tr>
+                <tr class="bg-emerald-50/70 font-semibold">
+                  <td class="py-2.5 font-bold text-brand-navy">F</td>
+                  <td class="text-brand-navy">Sistema Completo VISTRA + Incertidumbre</td>
+                  <td class="text-brand-teal font-bold">98.4 %</td>
+                  <td class="text-brand-teal font-bold">0.05</td>
+                  <td class="text-right text-emerald-600 font-bold">Óptimo ✓</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p class="text-[11px] text-slate-500 mt-4 leading-relaxed">
+            * Datos ilustrativos representativos del diseño experimental formulado en el documento de investigación para vías con geometría colombiana y oclusiones típicas.
+          </p>
+        </div>
+
+        <!-- MAE de Ejes Formula Card -->
+        <div class="lg:col-span-4 bg-brand-navy text-white rounded-xl p-6 border border-slate-800 space-y-4">
+          <div class="flex items-center gap-2 text-xs font-mono-tech text-emerald-400 uppercase">
+            <i data-lucide="calculator" class="w-4 h-4"></i>
+            <span>Métrica Propia del Proyecto</span>
+          </div>
+
+          <h3 class="text-lg font-bold font-display">MAE de Ejes (Error Absoluto Medio)</h3>
+          
+          <p class="text-xs text-slate-300 leading-relaxed">
+            Una matriz de confusión tradicional no distingue la gravedad de los errores: confundir un <strong>C5 con C6</strong> es un error de 1 eje, pero confundir un <strong>C2 con C6</strong> es catastrófico para la infraestructura (error de 4 ejes).
+          </p>
+
+          <div class="bg-slate-900 p-4 rounded-lg border border-slate-700 text-center font-mono-tech text-emerald-300 text-sm">
+            MAE<sub>ejes</sub> = (1/N) · Σ |E<sub>i</sub> - Ê<sub>i</sub>|
+          </div>
+
+          <p class="text-[11px] text-slate-400 font-mono-tech">
+            Donde E<sub>i</sub> es el número real de ejes y Ê<sub>i</sub> es el valor deducido por VISTRA.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- SECTION 07: COTIZADOR INTERACTIVO DE PROYECTO (Traffic as a Service) -->
+  <section id="cotizador" class="py-20 bg-slate-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="max-w-3xl mb-12">
+        <span class="text-xs font-mono-tech text-brand-teal tracking-widest uppercase block mb-2">07 // MODELO COMERCIAL</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-navy font-display">
+          Traffic Video Analytics as a Service.
+        </h2>
+        <p class="text-slate-600 mt-3 text-sm sm:text-base">
+          Tú nos suministras las grabaciones de tus estaciones de conteo en la nube (Google Drive, OneDrive o disco duro), y VISTRA te entrega los aforos consolidados listos para tus informes.
+        </p>
+      </div>
+
+      <!-- Interactive Calculator Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-10 max-w-4xl mx-auto">
+        <h3 class="text-xl font-bold text-brand-navy font-display mb-6 pb-3 border-b border-slate-100 flex items-center justify-between">
+          <span>Estimador de Alcance y Tiempo de Procesamiento</span>
+          <span class="text-xs font-mono-tech text-slate-400 font-normal">Calculadora Preliminar</span>
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Controls -->
+          <div class="space-y-6">
+            
+            <!-- Video Hours Range -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-mono-tech uppercase font-bold text-slate-700">Horas de Video a Procesar:</label>
+                <span id="label-hours" class="text-base font-mono-tech font-bold text-brand-teal">24 horas</span>
+              </div>
+              <input id="range-hours" type="range" min="4" max="168" value="24" step="4" 
+                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-teal" />
+              <div class="flex justify-between text-[10px] font-mono-tech text-slate-400 mt-1">
+                <span>4h (Muestra)</span>
+                <span>24h (Día completo)</span>
+                <span>168h (Semanal continuo)</span>
+              </div>
+            </div>
+
+            <!-- Number of Stations/Cameras -->
+            <div>
+              <div class="flex justify-between items-center mb-2">
+                <label class="text-xs font-mono-tech uppercase font-bold text-slate-700">Número de Estaciones / Cámaras:</label>
+                <span id="label-cameras" class="text-base font-mono-tech font-bold text-brand-teal">2 estaciones</span>
+              </div>
+              <input id="range-cameras" type="range" min="1" max="10" value="2" step="1" 
+                class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-teal" />
+              <div class="flex justify-between text-[10px] font-mono-tech text-slate-400 mt-1">
+                <span>1 cámara</span>
+                <span>5 cámaras</span>
+                <span>10 cámaras</span>
+              </div>
+            </div>
+
+            <!-- Deliverable Checkboxes -->
+            <div class="space-y-2 pt-2">
+              <label class="text-xs font-mono-tech uppercase font-bold text-slate-700 block mb-2">Entregables Requeridos:</label>
+              <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                <input type="checkbox" id="check-excel" checked disabled class="rounded text-brand-teal" />
+                <span>Matriz de Aforo en Excel (Intervalos 15 min y horario)</span>
+              </label>
+              <label class="flex items-center gap-2 text-xs text-slate-700 cursor-pointer">
+                <input type="checkbox" id="check-video" class="rounded text-brand-teal" onchange="updateEstimator()" />
+                <span>Video de Auditoría con Detecciones Marcadas</span>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- Results Summary Box -->
+          <div class="bg-brand-navy rounded-xl p-6 text-white flex flex-col justify-between border border-slate-800">
+            <div>
+              <span class="text-xs font-mono-tech text-emerald-400 uppercase tracking-wider block mb-1">RESUMEN DEL PROCESAMIENTO</span>
+              <h4 class="text-lg font-bold font-display text-white mb-4">Parámetros de Servicio</h4>
+              
+              <div class="space-y-3 font-mono-tech text-xs text-slate-300">
+                <div class="flex justify-between border-b border-slate-800 pb-2">
+                  <span class="text-slate-400">Total Volumen Video:</span>
+                  <span id="est-total-hours" class="font-bold text-white">48 horas video</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-800 pb-2">
+                  <span class="text-slate-400">Tiempo de Entrega Estimado:</span>
+                  <span id="est-delivery-time" class="font-bold text-emerald-300">24 a 36 horas</span>
+                </div>
+                <div class="flex justify-between border-b border-slate-800 pb-2">
+                  <span class="text-slate-400">Vehículos aprox. aforados:</span>
+                  <span id="est-approx-vehicles" class="font-bold text-white">~35,000 vehículos</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Precisión Garantizada:</span>
+                  <span class="font-bold text-emerald-400">&gt; 96% en Pesados</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-800">
+              <a href="#contacto" class="w-full block py-3 bg-brand-teal text-brand-navy font-bold text-xs uppercase tracking-wider text-center rounded hover:bg-emerald-400 transition-colors font-mono-tech">
+                Solicitar Cotización Formal
+              </a>
+              <span class="text-[10px] font-mono-tech text-slate-400 text-center block mt-2">
+                Tarifas por hora de video procesado • Sin costo fijo de licencias
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- SECTION 08: CONTACTO Y PILOTO (Call to Action) -->
+  <section id="contacto" class="py-20 bg-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="text-center mb-12">
+        <span class="text-xs font-mono-tech text-brand-teal tracking-widest uppercase block mb-2">HABLEMOS DE TU PROYECTO</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold text-brand-navy font-display">
+          Envíanos un video piloto y comprueba la exactitud de VISTRA.
+        </h2>
+        <p class="text-slate-600 mt-3 text-sm sm:text-base max-w-xl mx-auto">
+          ¿Tienes una grabación de 1 hora de una carretera o peaje en Colombia? Procesaremos una muestra de cortesía para que compares nuestros aforos C2–C6 con tu conteo actual.
+        </p>
+      </div>
+
+      <!-- Contact Form -->
+      <form id="contact-form" onsubmit="handleContactSubmit(event)" class="bg-slate-50 p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-mono-tech uppercase font-bold text-slate-700 block mb-1">Nombre Completo:</label>
+            <input type="text" required placeholder="Ing. Carlos Rodríguez" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-teal bg-white font-mono-tech" />
+          </div>
+          <div>
+            <label class="text-xs font-mono-tech uppercase font-bold text-slate-700 block mb-1">Empresa / Entidad:</label>
+            <input type="text" required placeholder="Consultores Viales S.A.S." class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-teal bg-white font-mono-tech" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-mono-tech uppercase font-bold text-slate-700 block mb-1">Correo Electrónico:</label>
+            <input type="email" required placeholder="crodriguez@consultoria.com" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-teal bg-white font-mono-tech" />
+          </div>
+          <div>
+            <label class="text-xs font-mono-tech uppercase font-bold text-slate-700 block mb-1">Teléfono / WhatsApp:</label>
+            <input type="tel" placeholder="+57 310 000 0000" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-teal bg-white font-mono-tech" />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-mono-tech uppercase font-bold text-slate-700 block mb-1">Enlace a Video de Prueba (Google Drive, OneDrive, WeTransfer):</label>
+          <input type="url" placeholder="https://drive.google.com/drive/folders/..." class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-teal bg-white font-mono-tech" />
+        </div>
+
+        <div>
+          <label class="text-xs font-mono-tech uppercase font-bold text-slate-700 block mb-1">Descripción del Estudio o Vía:</label>
+          <textarea rows="3" placeholder="Ubicación de la cámara, altura aproximada, objetivo del aforo (concesión, estudio de tránsito, etc.)" class="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 text-xs text-slate-800 focus:outline-none focus:border-brand-teal bg-white font-mono-tech"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-between">
+          <span class="text-[11px] font-mono-tech text-slate-500">Garantía de confidencialidad de grabaciones viales</span>
+          <button type="submit" class="px-6 py-3 bg-brand-navy text-white text-xs font-mono-tech uppercase tracking-wider font-bold rounded-lg hover:bg-brand-teal transition-all shadow-md">
+            Enviar Solicitud de Piloto
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Feedback message -->
+      <div id="form-success" class="hidden mt-4 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-mono-tech text-center">
+        ✓ Solicitud recibida. Un ingeniero de VISTRA se comunicará contigo en menos de 2 horas para coordinar la prueba piloto.
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- FOOTER -->
+  <footer class="bg-brand-navy text-slate-400 py-12 border-t border-slate-800 text-xs font-mono-tech">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <img src="logo-vistra.png" alt="VISTRA Logo" class="h-8 w-auto brightness-200" />
+          <span class="text-slate-300 font-bold">VISTRA | De un píxel a una decisión.</span>
+        </div>
+        <div class="text-center md:text-right text-[11px] text-slate-400">
+          Visión artificial especializada para la infraestructura vial de Colombia.
+        </div>
+      </div>
+
+      <div class="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+        <div>
+          © 2026 VISTRA Technologies • Proyecto de Innovación e Investigación Aplicada.
+        </div>
+        <div class="flex gap-4">
+          <a href="#hero" class="hover:text-white transition-colors">Volver Arriba ↑</a>
+          <a href="#arquitectura" class="hover:text-white transition-colors">Arquitectura</a>
+          <a href="#investigacion" class="hover:text-white transition-colors">Tesis de Maestría</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>
